@@ -1,6 +1,7 @@
-import api from '@/api/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import api, { API_BASE_URL } from "@/api/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createAsyncThunk, createSlice, isRejectedWithValue, PayloadAction } from "@reduxjs/toolkit";
+import { Audio } from "expo-av";
 
 // Types
 export interface ChatMessage {
@@ -29,59 +30,90 @@ const initialState: ChatState = {
   isRecording: false,
   recordingDuration: 0,
 };
-
+export const preLoadAllAudios = async(messages:ChatMessage[])=>{
+   try {
+      const results = [];
+      var index=1
+      for (const item of messages) {
+        try {
+          const { sound, status } = await Audio.Sound.createAsync({
+            uri: item.audioUrl.includes('files')
+            ?  item.audioUrl
+            : `${API_BASE_URL}${item.audioUrl}`,
+          });
+          console.log('index loaded', index)
+          results.push({
+            ...item,
+            isLoaded: status.isLoaded
+          });
+          index=index++
+        } catch (e) {
+          results.push({
+            ...item
+          });
+        }
+      }
+      return results;
+    } catch (err) {
+      return isRejectedWithValue(err);
+    }
+}
 // Async thunks
 export const uploadAudioMessage = createAsyncThunk(
-  'chat/uploadAudio',
-  async (uri: string, { rejectWithValue,getState, dispatch }) => {
+  "chat/uploadAudio",
+  async (uri: string, { rejectWithValue, getState, dispatch }) => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem("token");
       const formData = new FormData();
       const fileUriParts = uri.split("/");
       const filename = fileUriParts[fileUriParts.length - 1];
-      
+
       formData.append("file", {
         uri,
         name: filename,
         type: "audio/m4a",
       } as any);
-      console.log("formData", formData,token);
-      const response = await api.post('/Chat/audio', formData, {
+      console.log("formData", formData, token);
+      const response = await api.post("/Chat/audio", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
         },
       });
-      console.log("uploadAudioMessage response", response.data.find((item:any)=>item.role==1));
+      console.log(
+        "uploadAudioMessage response",
+        response.data.find((item: any) => item.role == 1)
+      );
+      // await preLoadAllAudios(response.data)
       // dispatch(getAllMessages())
-      return  response.data.find((item:any)=>item.role==1);
+      return response.data;
     } catch (error: any) {
-      console.log("uploadAudioMessage error", error);
-      return rejectWithValue(error.response?.data?.message || 'Upload failed');
+      console.log("uploadAudioMessage error", error, error.response?.data?.message, error?.response?.error);
+      return rejectWithValue(error.response?.data?.message || "Upload failed");
     }
   }
 );
 // Async thunks
 export const getAllMessages = createAsyncThunk(
-  'chat/getAllMessages',
+  "chat/getAllMessages",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/Chat/messages', {
+      const response = await api.get("/Chat/messages", {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       console.log("getAllMessages response", response);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Upload failed');
+      return rejectWithValue(error.response?.data?.message || "Upload failed");
     }
   }
 );
 
 // Chat slice
 const chatSlice = createSlice({
-  name: 'chat',
+  name: "chat",
   initialState,
   reducers: {
     addMessage: (state, action: PayloadAction<ChatMessage>) => {
@@ -90,21 +122,31 @@ const chatSlice = createSlice({
     addLoadingMessage: (state, action: PayloadAction<string>) => {
       state.messages.push({
         id: action.payload,
-        messageText: '',
-        audioUrl: '',
+        messageText: "",
+        audioUrl: "",
         timestamp: new Date().toISOString(),
         role: 1,
         isLoading: true,
       });
     },
-    updateMessage: (state, action: PayloadAction<{ id: string; updates: Partial<ChatMessage> }>) => {
-      const index = state.messages.findIndex(msg => msg.id === action.payload.id);
+    updateMessage: (
+      state,
+      action: PayloadAction<{ id: string; updates: Partial<ChatMessage> }>
+    ) => {
+      const index = state.messages.findIndex(
+        (msg) => msg.id === action.payload.id
+      );
       if (index !== -1) {
-        state.messages[index] = { ...state.messages[index], ...action.payload.updates };
+        state.messages[index] = {
+          ...state.messages[index],
+          ...action.payload.updates,
+        };
       }
     },
     removeMessage: (state, action: PayloadAction<string>) => {
-      state.messages = state.messages.filter(msg => msg.id !== action.payload);
+      state.messages = state.messages.filter(
+        (msg) => msg.id !== action.payload
+      );
     },
     clearMessages: (state) => {
       state.messages = [];
@@ -139,7 +181,14 @@ const chatSlice = createSlice({
       })
       .addCase(uploadAudioMessage.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.messages.push(action.payload);
+        // state.messages.pop()
+        // state.messages.push(action.payload);
+        // state.messages = [...state.messages.slice(0,state.messages.length-1),state.messages.find((item:any)=>item.role===0)]
+        state.messages = [
+          ...state.messages.slice(0, -1), // remove the last item
+          ...action.payload.filter((item: any) => item.role === 0), // add user message first
+          ...action.payload.filter((item: any) => item.role === 1), // then system message
+        ];
         // You can update the message with the response data if needed
         // For example, if the API returns a transcription or AI response
       })
@@ -159,7 +208,6 @@ export const {
   setRecording,
   setRecordingDuration,
   clearError,
-
 } = chatSlice.actions;
 
-export default chatSlice.reducer; 
+export default chatSlice.reducer;

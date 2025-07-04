@@ -1,6 +1,6 @@
 import Button from "@/components/ui/Button";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { clearError, loginUser } from "@/store/slices/authSlice";
+import { clearError, registerUser } from "@/store/slices/authSlice";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -17,12 +17,13 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 type FormData = {
   email: string;
   password: string;
+  firstName: string;
+  lastName: string;
 };
 
-const Login = () => {
+const Registration = () => {
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
-  
   const {
     control,
     handleSubmit,
@@ -32,25 +33,23 @@ const Login = () => {
     defaultValues: {
       email: "",
       password: "",
+      firstName: "",
+      lastName: "",
     },
     mode: "onSubmit",
   });
 
-  // Clear error when component mounts
   useEffect(() => {
     dispatch(clearError());
   }, [dispatch]);
 
   const onSubmit = async (data: FormData) => {
-    console.log("data-==--=", data);
     try {
-      // Use Redux thunk for login
-      const result = await dispatch(loginUser(data)).unwrap();
-      console.log("Login successful:", result);
-      router.navigate("/home");
-    } catch (error: any) {
-      console.log("Login error:", error);
-      // Error is handled by the Redux slice
+      await dispatch(registerUser(data)).unwrap();
+      dispatch(clearError());
+      router.navigate("/login");
+    } catch (err) {
+      // error handled by redux
     }
   };
 
@@ -65,9 +64,68 @@ const Login = () => {
           style={styles.image}
           resizeMode="contain"
         />
-        <Text style={styles.title}>Welcome Back!</Text>
+        <Text style={styles.title}>Register</Text>
       </View>
-
+      {/* First name input */}
+      <Controller
+        control={control}
+        name="firstName"
+        rules={{
+          required: "First name is required",
+          pattern: {
+            value: /^[a-zA-Z]+$/,
+            message: "Enter a valid first name",
+          },
+        }}
+        render={({ field: { onChange, onBlur, value } }) => (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="First name"
+              keyboardType="default"
+              autoCapitalize="none"
+              value={value}
+              onChangeText={(text) => {
+                onChange(text);
+                if (errors.firstName) clearErrors("firstName");
+                if (error) dispatch(clearError());
+              }}
+              onBlur={onBlur}
+            />
+            <Text style={styles.error}>{errors?.firstName?.message}</Text>
+          </>
+        )}
+      />
+      {/* Last name input */}
+      <Controller
+        control={control}
+        name="lastName"
+        rules={{
+          required: "Last name is required",
+          pattern: {
+            value: /^[a-zA-Z]+$/,
+            message: "Enter a valid last name",
+          },
+        }}
+        render={({ field: { onChange, onBlur, value } }) => (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Last name"
+              keyboardType="default"
+              autoCapitalize="none"
+              value={value}
+              onChangeText={(text) => {
+                onChange(text);
+                if (errors.lastName) clearErrors("lastName");
+                if (error) dispatch(clearError());
+              }}
+              onBlur={onBlur}
+            />
+            <Text style={styles.error}>{errors?.lastName?.message}</Text>
+          </>
+        )}
+      />
       {/* Email input */}
       <Controller
         control={control}
@@ -98,7 +156,6 @@ const Login = () => {
           </>
         )}
       />
-
       {/* Password input */}
       <Controller
         control={control}
@@ -107,9 +164,15 @@ const Login = () => {
           required: "Password is required",
           minLength: {
             value: 6,
-            message: "Password must be at least 8 characters",
+            message: "Password must be at least 6 characters",
           },
+          // pattern: {
+          //   value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/,
+          //   message:
+          //     "Password must contain uppercase, lowercase, number, and special character",
+          // },
         }}
+      
         render={({ field: { onChange, onBlur, value } }) => (
           <>
             <TextInput
@@ -129,25 +192,23 @@ const Login = () => {
           </>
         )}
       />
-
       {/* Submit button */}
       <Button
-        title="Login"
+        title="Register"
         onPress={handleSubmit(onSubmit)}
         loading={isLoading}
         disabled={isLoading}
         variant="primary"
         size="medium"
       />
-
       {/* Registration link */}
       <TouchableOpacity
-        onPress={() => router.navigate("/registration")}
+        onPress={() => router.back()}
         style={styles.registerLink}
       >
         <Text style={styles.registerText}>
-          Don't have an account?{" "}
-          <Text style={{ fontWeight: "bold" }}>Register</Text>
+          Already have an account?{" "}
+          <Text style={{ fontWeight: "bold" }}>Login</Text>
         </Text>
       </TouchableOpacity>
     </KeyboardAwareScrollView>
@@ -155,7 +216,7 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Registration;
 
 const styles = StyleSheet.create({
   container: {

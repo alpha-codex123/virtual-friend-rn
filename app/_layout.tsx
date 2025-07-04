@@ -1,56 +1,91 @@
-// import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-// import { useFonts } from 'expo-font';
-// import { Stack } from 'expo-router';
-// import { StatusBar } from 'expo-status-bar';
-// import 'react-native-reanimated';
-
-// import { useColorScheme } from '@/hooks/useColorScheme';
-// import { useStorageState } from '@/hooks/useStorageState';
-
+// // app/_layout.tsx
+// import { ReduxProvider } from '@/store/Provider';
+// import { Slot } from 'expo-router';
 // export default function RootLayout() {
-//   const colorScheme = useColorScheme();
-//   // const [state, setState] = useStorageState();
-//     const [[isLoading, token], setToken] = useStorageState('token');
-//     console.log('token===', token)
-
-//   const [loaded] = useFonts({
-//     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-//   });
-
-//   if (!loaded) {
-//     // Async font loading only occurs in development.
-//     return null;
-//   }
-
 //   return (
-//     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-//       <Stack>
-//         {/* <Stack.Screen name="(tab)" options={{ headerShown: false }} /> */}
-//         {token ? <Stack.Screen name="(app)" options={{ headerShown: false }} /> : <Stack.Screen name="(auth)" options={{ headerShown: false }} />}
-//         <Stack.Screen name="+not-found" />
-//       </Stack>
-//       <StatusBar style="auto" />
-//     </ThemeProvider>
+//     // <Provider store={store}>
+//     //   <PersistGate persistor={persistor}>
+//       <ReduxProvider>
+//         <Slot />
+//       </ReduxProvider>
+//     // </PersistGate>
+//     // </Provider>
 //   );
 // }
-
-
-
-// app/_layout.tsx
-import { persistor, store } from '@/store';
 import { ReduxProvider } from '@/store/Provider';
-import { Slot } from 'expo-router';
-import { Provider } from 'react-redux';
-import { PersistGate } from 'redux-persist/integration/react';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import 'react-native-reanimated';
+import { useColorScheme } from '../hooks/useColorScheme';
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  useEffect(() => {
+    // Simulate splash screen delay
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!loaded || isLoading) {
+    // Show splash screen while fonts are loading or during initial delay
+    return null; // This will show the splash screen
+  }
+
   return (
-    <Provider store={store}>
-      <PersistGate persistor={persistor}>
-      <ReduxProvider>
-        <Slot />
-      </ReduxProvider>
-    </PersistGate>
-    </Provider>
+    <ReduxProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack 
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
+            },
+            headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+            headerTitleStyle: {
+              fontFamily: 'SpaceMono',
+              fontSize: 20,
+            },
+            headerShown: false
+          }}
+        >
+          {/* Show splash screen first */}
+          <Stack.Screen 
+            name="splash" 
+            options={{ headerShown: false }} 
+          />
+          
+          {/* Auth screens */}
+          <Stack.Screen 
+            name="login" 
+            options={{ headerShown: false }} 
+          />
+          <Stack.Screen 
+            name="registration" 
+            options={{ headerShown: false }} 
+          />
+          
+          {/* App screens - only accessible when authenticated */}
+          <Stack.Screen 
+            name="home" 
+            options={{ headerShown: false }} 
+          />
+          
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </ReduxProvider>
   );
 }
+

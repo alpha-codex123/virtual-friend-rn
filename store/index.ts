@@ -11,7 +11,7 @@ const persistConfig = {
   key: 'root',
   version: 1,
   storage: AsyncStorage,
-  whitelist: ['auth', 'chat'], // only persist auth slice
+  whitelist: ['auth'], // only persist auth slice
 };
 
 // 2. Combine reducers if you have more than one

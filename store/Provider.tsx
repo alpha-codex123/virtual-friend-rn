@@ -1,31 +1,28 @@
+import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
-import { useAppDispatch } from './hooks';
-import { store } from './index';
-import { persistToken } from './slices/authSlice';
+import { PersistGate } from 'redux-persist/integration/react';
+import { persistor, store } from './index';
+
+SplashScreen.preventAutoHideAsync();
 
 interface ReduxProviderProps {
   children: React.ReactNode;
 }
 
-// Component to initialize auth state
-const AuthInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const dispatch = useAppDispatch();
-
-  useEffect(() => {
-    // Check for persisted token on app start
-    dispatch(persistToken());
-  }, [dispatch]);
-
-  return <>{children}</>;
-};
-
 export const ReduxProvider: React.FC<ReduxProviderProps> = ({ children }) => {
+  useEffect(() => {
+    const hide = async () => {
+      await SplashScreen.hideAsync();
+    };
+    hide();
+  }, []);
+
   return (
     <Provider store={store}>
-      <AuthInitializer>
+      <PersistGate persistor={persistor}>
         {children}
-      </AuthInitializer>
+      </PersistGate>
     </Provider>
   );
 }; 

@@ -5,7 +5,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 // Types
 interface AuthState {
   token: string | null;
-  user: any | null;
+  username: any | null;
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
@@ -18,13 +18,13 @@ interface LoginCredentials {
 
 interface LoginResponse {
   token: string;
-  user: any;
+  username: any;
 }
 
 // Initial state
 const initialState: AuthState = {
   token: null,
-  user: null,
+  username: null,
   isLoading: false,
   error: null,
   isAuthenticated: false,
@@ -37,13 +37,16 @@ export const loginUser = createAsyncThunk(
     try {
       // Use the existing API instance
       const response = await api.post('User/login', credentials);
-      const { token, user } = response.data as LoginResponse;
+      console.log('response-----',response)
+      const { token, username } = response.data as LoginResponse;
       
       // Store token in AsyncStorage
       await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('username', username);
       
-      return { token, user };
+      return { token, username };
     } catch (error: any) {
+      console.log("error.response?.data?.errorMessage-=---=",error?.message, error?.response?.message,error?.response?.data?.errorMessage)
       return rejectWithValue(error.response?.data?.errorMessage || 'Login failed');
     }
   }
@@ -51,14 +54,20 @@ export const loginUser = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk(
   'auth/logout',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
       console.log("Logout started");
-      // Clear token from AsyncStorage
-      await AsyncStorage.removeItem('token');
-      console.log("Logout successful");
+      
+      // Clear all AsyncStorage data
+      await AsyncStorage.clear();
+      
+      // Dispatch PURGE action to clear all persisted Redux state
+      // dispatch({ type: PURGE });
+      
+      console.log("Logout successful - all data cleared");
       return null;
     } catch (error: any) {
+      console.error("Logout error:", error,error?.message,error?.response?.message);
       return rejectWithValue('Logout failed');
     }
   }
@@ -119,7 +128,7 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.token = action.payload.token;
-        state.user = action.payload.user;
+        state.username = action.payload.username;
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -137,7 +146,7 @@ const authSlice = createSlice({
       .addCase(logoutUser.fulfilled, (state) => {
         state.isLoading = false;
         state.token = null;
-        state.user = null;
+        state.username = null;
         state.isAuthenticated = false;
         state.error = null;
       })
@@ -155,7 +164,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         if (action.payload) {
           state.token = action.payload.token;
-          state.user = action.payload.user;
+          state.username = action.payload.username;
           state.isAuthenticated = true;
         }
       })
