@@ -46,10 +46,11 @@ const Registration = () => {
   const onSubmit = async (data: FormData) => {
     try {
       await dispatch(registerUser(data)).unwrap();
-      dispatch(clearError());
+      // dispatch(clearError());
       router.navigate("/login");
-    } catch (err) {
+    } catch (err:any) {
       // error handled by redux
+      console.log('eror------',error,error?.message, error?.response?.message)
     }
   };
 
@@ -60,7 +61,7 @@ const Registration = () => {
       {/* Top section */}
       <View style={styles.topSection}>
         <Image
-          source={{ uri: "https://reactnative.dev/img/tiny_logo.png" }}
+          source={require('../assets/images/AI_Mitra.png')}
           style={styles.image}
           resizeMode="contain"
         />
@@ -230,8 +231,8 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   image: {
-    width: 80,
-    height: 80,
+    width: 120,
+    height: 120,
     marginBottom: 10,
   },
   title: {

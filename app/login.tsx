@@ -2,7 +2,7 @@ import Button from "@/components/ui/Button";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { loginUser } from "@/store/slices/authSlice";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   Image,
@@ -72,7 +72,7 @@ const Login = () => {
       {/* Top section */}
       <View style={styles.topSection}>
         <Image
-          source={{ uri: "https://reactnative.dev/img/tiny_logo.png" }}
+          source={require('../assets/images/AI_Mitra.png')}
           style={styles.image}
           resizeMode="contain"
         />
@@ -180,8 +180,8 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   image: {
-    width: 80,
-    height: 80,
+    width: 120,
+    height: 120,
     marginBottom: 10,
   },
   title: {

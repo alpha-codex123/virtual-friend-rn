@@ -101,6 +101,8 @@ export const registerUser = createAsyncThunk(
       // Optionally, you could return the token and user if your API does so
       return response.data;
     } catch (error: any) {
+      console.error("Logout error:", error,error?.message,error?.response?.message);
+
       return rejectWithValue(error.response?.data?.errorMessage || 'Registration failed');
     }
   }

@@ -80,10 +80,7 @@ export const uploadAudioMessage = createAsyncThunk(
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log(
-        "uploadAudioMessage response",
-        response.data.find((item: any) => item.role == 1)
-      );
+      dispatch(removeMessage('thinking'))
       // await preLoadAllAudios(response.data)
       // dispatch(getAllMessages())
       return response.data;

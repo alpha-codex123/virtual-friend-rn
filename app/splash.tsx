@@ -1,8 +1,8 @@
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { persistToken } from '@/store/slices/authSlice';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { persistToken } from "@/store/slices/authSlice";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 export default function SplashScreen() {
   const dispatch = useAppDispatch();
@@ -27,22 +27,39 @@ export default function SplashScreen() {
     if (splashComplete && !isLoading) {
       // Navigate based on authentication state
       if (isAuthenticated) {
-        router.replace('/home');
+        router.replace("/home");
       } else {
-        router.replace('/login');
+        router.replace("/login");
       }
     }
   }, [splashComplete, isAuthenticated, isLoading]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Ai Mitra </Text>
-      <ActivityIndicator size="large" color="#000" />
+      <Image
+        source={require("../assets/images/AI_Mitra.png")}
+        style={styles.image}
+        resizeMode="contain"
+      />
+      {/* <Text style={styles.title}>Welcome to Ai Mitra </Text> */}
+      <Text style={[styles.title, styles.subtitle]}>
+        Always here to listen. Always by your side
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  container: { flex: 1, justifyContent: "center", alignItems: "center" },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 20,
+    color: "gray",
+  },
+  image: {
+    width: 256,
+    height: 256,
+    marginBottom: 10,
+  },
 });
