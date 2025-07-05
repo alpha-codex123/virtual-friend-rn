@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError, AxiosHeaders, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 
-export const API_BASE_URL = 'https://502c-122-170-99-65.ngrok-free.app';
+export const API_BASE_URL = 'https://d257-122-170-99-65.ngrok-free.app';
 
 // Simulate getting token from storage or redux
 async function getAuthToken(): Promise<string | null> {

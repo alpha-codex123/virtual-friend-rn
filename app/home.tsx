@@ -580,12 +580,12 @@
 //   const { messages, isRecording, isLoading } = useAppSelector((state) => state.chat);
 //   const { username } = useAppSelector((state) => state.auth);
 //   console.log("messages", messages);
-  
+
 //   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 //   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 //   const [recordingDuration, setRecordingDuration] = useState(0);
 //   const scale = useSharedValue(1);
-  
+
 //   // Enhanced audio playback state
 //   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
 //   const [audioSound, setAudioSound] = useState<Audio.Sound | null>(null);
@@ -607,7 +607,6 @@
 //       micOpacity.value = withTiming(1, { duration: 200 });
 //     }
 //   }, [isRecording]);
-
 
 //   const handleLogout = async () => {
 //     try {
@@ -759,8 +758,7 @@
 //   //     console.log("sound", sound);
 //   //     setAudioSound(sound);
 //   //     setPlayingAudioId(messageId);
-      
-      
+
 //   //      // Listen for playback status
 //   //      sound.setOnPlaybackStatusUpdate((status) => {
 //   //        if (status.isLoaded && status.didJustFinish) {
@@ -826,9 +824,9 @@
 //       setAudioSound(sound.sound);
 //       setPlayingAudioId(messageId);
 //       setIsPaused(false);
-      
+
 //       await sound.sound.playAsync();
-      
+
 //       // Listen for playback status
 //       sound.sound.setOnPlaybackStatusUpdate((status) => {
 //         if (status.isLoaded && status.didJustFinish) {
@@ -915,7 +913,7 @@
 //     ]}>
 //     <Text style={styles.messageText}>{item.error}</Text>
 //     </View>
-    
+
 //     return (
 //       <View style={[
 //         styles.message,
@@ -926,7 +924,7 @@
 //             {item.messageText}
 //           </Text>
 //         )}
-        
+
 //         {/* Show audio controls for messages with audioUrl */}
 //         {item.audioUrl && (
 //           <TouchableOpacity
@@ -935,16 +933,16 @@
 //           >
 //             <FontAwesome
 //               name={
-//                 isPlaying 
-//                   ? (isCurrentAudioPaused ? "play" : "pause") 
+//                 isPlaying
+//                   ? (isCurrentAudioPaused ? "play" : "pause")
 //                   : "play"
 //               }
 //               size={16}
 //               color="white"
 //             />
 //             <Text style={styles.audioButtonText}>
-//               {isPlaying 
-//                 ? (isCurrentAudioPaused ? "Resume" : "Pause") 
+//               {isPlaying
+//                 ? (isCurrentAudioPaused ? "Resume" : "Pause")
 //                 : "Play"
 //               }
 //             </Text>
@@ -983,7 +981,7 @@
 //                 {formatTime(recordingDuration)}
 //               </Text>
 //             </View>
-//             <TouchableOpacity onPress={()=>handleLogout()}> 
+//             <TouchableOpacity onPress={()=>handleLogout()}>
 //               <FontAwesome name="sign-out" size={24} color="#000" />
 //             </TouchableOpacity>
 //           </View>
@@ -1016,7 +1014,7 @@
 //   },
 //   errorMessage:{
 //     backgroundColor: "#e74c3c",
-//   }, 
+//   },
 //   sent: {
 //     backgroundColor: "#4CAF50",
 //     alignSelf: "flex-end",
@@ -1087,7 +1085,7 @@
 //     marginLeft: 6,
 //   },
 //   flatListContent: {
-//     flex:1, paddingBottom:10,alignContent:'flex-end', justifyContent:'flex-end' 
+//     flex:1, paddingBottom:10,alignContent:'flex-end', justifyContent:'flex-end'
 //   }
 // });
 import { API_BASE_URL } from "@/api/api";
@@ -1099,22 +1097,24 @@ import {
   getAllMessages,
   removeMessage,
   setRecording,
-  uploadAudioMessage
+  uploadAudioMessage,
 } from "@/store/slices/chatSlice";
 import { FontAwesome } from "@expo/vector-icons"; // For mic icon and play/pause icons
 import { AudioModule, RecordingPresets, useAudioRecorder } from "expo-audio";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
+import { router } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import Animated, {
   Easing,
@@ -1126,14 +1126,18 @@ import Animated, {
 
 const HomeScreen = () => {
   const dispatch = useAppDispatch();
-  const { messages, isRecording, isLoading } = useAppSelector((state) => state.chat);
+  const { messages, isRecording, isLoading } = useAppSelector(
+    (state) => state.chat
+  );
   console.log("messages", messages);
-  
+  const flatListRef = useRef<FlatList<any>>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const scale = useSharedValue(1);
-  
+  const [isStartRecording, setStartRecording] = useState(false)
+
   // Enhanced audio playback state
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [audioSound, setAudioSound] = useState<Audio.Sound | null>(null);
@@ -1145,6 +1149,11 @@ const HomeScreen = () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
+  useEffect(() => {
+    if (isAtBottom && flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
 
   const micOpacity = useSharedValue(1);
 
@@ -1155,18 +1164,27 @@ const HomeScreen = () => {
       micOpacity.value = withTiming(1, { duration: 200 });
     }
   }, [isRecording]);
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 50; // adjust for sensitivity
+    const atBottom =
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom;
 
-
+    setIsAtBottom(atBottom);
+  };
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser()).unwrap();
       console.log("Logout successful");
+      router.replace('/login')
     } catch (error) {
       console.log("Logout error:", error);
     }
   };
 
   const startRecording = async () => {
+    setStartRecording(true);
     try {
       await audioRecorder.prepareToRecordAsync();
       await audioRecorder.record();
@@ -1187,6 +1205,7 @@ const HomeScreen = () => {
       }, 1000);
       setRecordingDuration(0);
     } catch (err: any) {
+      setStartRecording(false);
       console.log("Failed to start recording", err.message);
       Alert.alert("Failed to start recording", err.message);
     }
@@ -1206,6 +1225,7 @@ const HomeScreen = () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      setStartRecording(false);
 
       const uri = audioRecorder.uri;
       console.log("audioRecorder uri", uri);
@@ -1223,36 +1243,46 @@ const HomeScreen = () => {
       // Add message to chat with new structure
       const messageId = Date.now().toString();
       console.log("newPath", newPath);
-      console.log("uri", uri,messageId);
-      dispatch(addMessage({
-        id: messageId,
-        messageText: '', // User messages don't need text
-        audioUrl: newPath,
-        timestamp: new Date().toISOString(),
-        role: 0, // User role
-      }));
-      dispatch(addMessage({
-        id: 'thinking',
-        messageText: '', // User messages don't need text
-        audioUrl: '',
-        timestamp: new Date().toISOString(),
-        role: 1, // User role
-        isLoading:true
-      }));
+      console.log("uri", uri, messageId);
+      dispatch(
+        addMessage({
+          id: messageId,
+          messageText: "", // User messages don't need text
+          audioUrl: newPath,
+          timestamp: new Date().toISOString(),
+          role: 0, // User role
+        })
+      );
+      dispatch(
+        addMessage({
+          id: "thinking",
+          messageText: "", // User messages don't need text
+          audioUrl: "",
+          timestamp: new Date().toISOString(),
+          role: 1, // User role
+          isLoading: true,
+        })
+      );
 
       // Upload audio
       try {
         const response = await dispatch(uploadAudioMessage(newPath)).unwrap();
-        const systemResponse = response.find((item:any)=>item.role == 1)
-        if(response.length){
-          playSound(systemResponse.audioUrl, systemResponse.id, systemResponse.role)
+        const systemResponse = response.find((item: any) => item.role == 1);
+        if (response.length) {
+          playSound(
+            systemResponse.audioUrl,
+            systemResponse.id,
+            systemResponse.role
+          );
         }
         console.log("Upload success", response);
 
         setTimeout(() => {
-          dispatch(removeMessage('thinking'))
+          dispatch(removeMessage("thinking"));
         }, 3000);
-      } catch (error:any) {
+      } catch (error: any) {
+      setStartRecording(false);
+
         // dispatch(removeMessage('thinking'))
         // dispatch(addMessage({
         //   id: 'somethingWentWrong',
@@ -1263,10 +1293,17 @@ const HomeScreen = () => {
         //   error:'Something went wrong',
         //   // isLoading:true
         // }));
-        console.error("Upload error:", error, error?.message,error?.response?.message);
+        console.error(
+          "Upload error:",
+          error,
+          error?.message,
+          error?.response?.message
+        );
         // Alert.alert("Upload failed");
       }
     } catch (error: any) {
+      setStartRecording(false);
+
       Alert.alert("Error stopping recording", error.message);
       dispatch(setRecording(false));
       stopBreathingAnimation();
@@ -1275,10 +1312,10 @@ const HomeScreen = () => {
   const disabled = useMemo(() => {
     const isAnyOnGoingProcess = messages.find((item) => ({
       ...item,
-      isError: !!item.error || item.audioUrl === '',
+      isError: !!item.error || item.audioUrl === "",
     }));
     console.log("isAnyOnGoingProcess", isAnyOnGoingProcess);
-    return !!isAnyOnGoingProcess
+    return !!isAnyOnGoingProcess;
   }, [isRecording, isLoading, messages]);
   const toggleRecording = () => {
     if (isRecording) {
@@ -1311,8 +1348,7 @@ const HomeScreen = () => {
   //     console.log("sound", sound);
   //     setAudioSound(sound);
   //     setPlayingAudioId(messageId);
-      
-      
+
   //      // Listen for playback status
   //      sound.setOnPlaybackStatusUpdate((status) => {
   //        if (status.isLoaded && status.didJustFinish) {
@@ -1342,7 +1378,11 @@ const HomeScreen = () => {
   //     setPlayingAudioId(null);
   //   }
   // };
-  const playSound = async (audioUrl: string, messageId: string, role: number) => {
+  const playSound = async (
+    audioUrl: string,
+    messageId: string,
+    role: number
+  ) => {
     try {
       // If the same audio is already playing, pause it
       if (playingAudioId === messageId && audioSound) {
@@ -1369,18 +1409,20 @@ const HomeScreen = () => {
 
       // Create and play new audio
       let sound;
-      if (audioUrl.includes('files')) {
+      if (audioUrl.includes("files")) {
         sound = await Audio.Sound.createAsync({ uri: audioUrl });
       } else {
-        sound = await Audio.Sound.createAsync({ uri: `${API_BASE_URL}${audioUrl}` });
+        sound = await Audio.Sound.createAsync({
+          uri: `${API_BASE_URL}${audioUrl}`,
+        });
       }
 
       setAudioSound(sound.sound);
       setPlayingAudioId(messageId);
       setIsPaused(false);
-      
+
       await sound.sound.playAsync();
-      
+
       // Listen for playback status
       sound.sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
@@ -1412,8 +1454,11 @@ const HomeScreen = () => {
     }
   };
 
-
-  const toggleAudioPlayback = async (audioUrl: string, messageId: string, role: number) => {
+  const toggleAudioPlayback = async (
+    audioUrl: string,
+    messageId: string,
+    role: number
+  ) => {
     if (playingAudioId === messageId) {
       // If same audio is playing, toggle pause/play
       if (audioSound) {
@@ -1463,66 +1508,102 @@ const HomeScreen = () => {
     const isPlaying = playingAudioId === item.id;
     const isCurrentAudioPaused = isPlaying && isPaused;
     if (item.isLoading) return <ThinkingBubble />;
-    if (item.error) return <View style={[
-      styles.message,  isUser ? styles.sent : styles.received, styles.errorMessage
-    ]}>
-    <Text style={styles.messageText}>{item.error}</Text>
-    </View>
-    
+    if (item.error)
+      return (
+        <View
+          style={[
+            styles.message,
+            isUser ? styles.sent : styles.received,
+            styles.errorMessage,
+          ]}
+        >
+          <Text style={styles.messageText}>{item.error}</Text>
+        </View>
+      );
+
     return (
-      <View style={[
-        styles.message,
-        isUser ? styles.sent : styles.received,
-      ]}>
+      <View style={[styles.message, isUser ? styles.sent : styles.received]}>
         {!isUser && item.messageText && (
-          <Text style={styles.messageText}>
-            {item.messageText}
-          </Text>
+          <Text style={styles.messageText}>{item.messageText}</Text>
         )}
-        
+
         {/* Show audio controls for messages with audioUrl */}
         {item.audioUrl && (
           <TouchableOpacity
             style={styles.audioButton}
-            onPress={() => toggleAudioPlayback(item.audioUrl, item.id, item.role)}
+            onPress={() =>
+              toggleAudioPlayback(item.audioUrl, item.id, item.role)
+            }
           >
             <FontAwesome
               name={
-                isPlaying 
-                  ? (isCurrentAudioPaused ? "play" : "pause") 
-                  : "play"
+                isPlaying ? (isCurrentAudioPaused ? "play" : "pause") : "play"
               }
               size={16}
               color="white"
             />
             <Text style={styles.audioButtonText}>
-              {isPlaying 
-                ? (isCurrentAudioPaused ? "Resume" : "Pause") 
-                : "Play"
-              }
+              {isPlaying ? (isCurrentAudioPaused ? "Resume" : "Pause") : "Play"}
             </Text>
           </TouchableOpacity>
         )}
       </View>
     );
   };
-  if(isLoading && !messages.length) return <View style={{flex:1, justifyContent:'center', alignItems:'center'}}><ActivityIndicator size="large" color="#87CEEB" /></View>
+  if (isLoading && !messages.length)
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#87CEEB" />
+      </View>
+    );
   return (
-    <SafeAreaView style={{ flex: 1,marginTop:22 }}>
+    <SafeAreaView style={{ flex: 1, marginTop: 22 }}>
       <View style={styles.container}>
-        <View style={{flex:1 }}>
-
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => item.timestamp}
-          renderItem={renderItem}
-          // contentContainerStyle={styles.flatListContent}
-          />
-          </View>
+        <View style={{ flex: 1 }}>
+          {/* <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.timestamp}
+            renderItem={renderItem}
+            onContentSizeChange={() =>
+              flatListRef.current?.scrollToEnd({ animated: true })
+            }
+            // contentContainerStyle={styles.flatListContent}
+            showsVerticalScrollIndicator={false}
+          /> */}
+          {messages.length ? <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.timestamp}
+            renderItem={renderItem}
+            onScroll={handleScroll}
+            scrollEventThrottle={100}
+            onContentSizeChange={() => {
+              if (isAtBottom && flatListRef.current) {
+                flatListRef.current.scrollToEnd({ animated: true });
+              }
+            }}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 65 }}
+          />:
+          <View style={{flex:1, justifyContent:'center',alignItems:'center'}}>
+            <Image
+                        source={require("../assets/images/AI_Mitra.png")}
+                        style={styles.logo}
+                        resizeMode="contain"
+                      />
+            <Text style={{textAlign:'center', fontSize:18}}>
+              Your AI Mitra is here to listen, understand, and help; whenever you’re ready.
+            </Text>
+            </View>}
+        </View>
 
         <View style={styles.buttons}>
           <View style={styles.recorderContainer}>
-            <TouchableOpacity onPress={toggleRecording} disabled={!!playingAudioId}>
+            <TouchableOpacity
+              onPress={toggleRecording}
+              disabled={!!playingAudioId}
+            >
               <Animated.View style={[styles.micButton, animatedStyle]}>
                 <FontAwesome
                   name="microphone"
@@ -1536,7 +1617,7 @@ const HomeScreen = () => {
                 {formatTime(recordingDuration)}
               </Text>
             </View>
-            <TouchableOpacity onPress={()=>handleLogout()}> 
+            <TouchableOpacity onPress={() => handleLogout()}>
               <FontAwesome name="sign-out" size={24} color="#000" />
             </TouchableOpacity>
           </View>
@@ -1567,9 +1648,9 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     maxWidth: "75%",
   },
-  errorMessage:{
+  errorMessage: {
     backgroundColor: "#e74c3c",
-  }, 
+  },
   sent: {
     backgroundColor: "#4CAF50",
     alignSelf: "flex-end",
@@ -1640,7 +1721,12 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   flatListContent: {
-    flex:1, paddingBottom:10
+    flex: 1,
+    paddingBottom: 10,
   },
-
+  logo:{
+     width: 120,
+    height: 120,
+    marginBottom: 10,
+  }
 });

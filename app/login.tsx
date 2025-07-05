@@ -1,6 +1,7 @@
 import Button from "@/components/ui/Button";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { loginUser } from "@/store/slices/authSlice";
+import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -10,7 +11,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
@@ -23,24 +24,25 @@ const Login = () => {
   const dispatch = useAppDispatch();
   // const { isLoading, error } = useAppSelector((state) => state.auth);
   const { messages } = useAppSelector((state) => state.chat);
-  const [error,setError] = useState('');
-  const [isLoading,setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   console.log("messages", messages);
-  
+
   const {
-  control,
-  handleSubmit,
-  formState: { errors },
-  clearErrors,
-  reset
-} = useForm<FormData>({
-  defaultValues: {
-    email: "", // keep initial value
-    password: "",
-  },
-  mode: "onSubmit",
-  shouldUnregister: false, // ✅ preserve field values
-});
+    control,
+    handleSubmit,
+    formState: { errors },
+    clearErrors,
+    reset,
+  } = useForm<FormData>({
+    defaultValues: {
+      email: "", // keep initial value
+      password: "",
+    },
+    mode: "onSubmit",
+    shouldUnregister: false, // ✅ preserve field values
+  });
 
   // Clear error when component mounts
   // useEffect(() => {
@@ -48,7 +50,7 @@ const Login = () => {
   // }, [dispatch]);
 
   const onSubmit = async (data: FormData) => {
-    setIsLoading(true)
+    setIsLoading(true);
     console.log("data-==--=", data);
     try {
       // Use Redux thunk for login
@@ -57,111 +59,138 @@ const Login = () => {
       reset();
       router.replace("/home");
     } catch (error: any) {
-      setError(error)
+      setError(error);
       console.log("Login error:", error);
       // Error is handled by the Redux slice
-    }finally{
-    setIsLoading(false)
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <View style={{ flex: 1 }}>
-    <KeyboardAwareScrollView contentContainerStyle={styles.container}   enableOnAndroid={true}
-    keyboardShouldPersistTaps="handled">
-      {/* Top section */}
-      <View style={styles.topSection}>
-        <Image
-          source={require('../assets/images/AI_Mitra.png')}
-          style={styles.image}
-          resizeMode="contain"
-        />
-        <Text style={styles.title}>Welcome Back!</Text>
-      </View>
-
-      {/* Email input */}
-      <Controller
-        control={control}
-        name="email"
-        rules={{
-          required: "Email is required",
-          pattern: {
-            value: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-            message: "Enter a valid email",
-          },
-        }}
-        render={({ field: { onChange, onBlur, value } }) => (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={value}
-              onChangeText={(text) => {
-                onChange(text);
-                if (errors.email) clearErrors("email");
-                // if (error) dispatch(clearError());
-              }}
-              onBlur={onBlur}
-            />
-            <Text style={styles.error}>{errors?.email?.message}</Text>
-          </>
-        )}
-      />
-
-      {/* Password input */}
-      <Controller
-        control={control}
-        name="password"
-        rules={{
-          required: "Password is required",
-          minLength: {
-            value: 6,
-            message: "Password must be at least 6 characters",
-          },
-        }}
-        render={({ field: { onChange, onBlur, value } }) => (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              secureTextEntry
-              value={value}
-              onChangeText={(text) => {
-                onChange(text);
-                if (errors.password) clearErrors("password");
-                // if (error) dispatch(clearError());
-              }}
-              onBlur={onBlur}
-            />
-            <Text style={styles.error}>{errors?.password?.message}</Text>
-            {error && <Text style={styles.error}>{error}</Text>}
-          </>
-        )}
-      />
-
-      {/* Submit button */}
-      <Button
-        title="Login"
-        onPress={handleSubmit(onSubmit)}
-        loading={isLoading}
-        disabled={isLoading}
-        variant="primary"
-        size="medium"
-      />
-
-      {/* Registration link */}
-      <TouchableOpacity
-        onPress={() => router.navigate("/registration")}
-        style={styles.registerLink}
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.container}
+        enableOnAndroid={true}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.registerText}>
-          Don't have an account?{" "}
-          <Text style={{ fontWeight: "bold" }}>Register</Text>
-        </Text>
-      </TouchableOpacity>
-    </KeyboardAwareScrollView>
+        {/* Top section */}
+        <View style={styles.topSection}>
+          <Image
+            source={require("../assets/images/AI_Mitra.png")}
+            style={styles.image}
+            resizeMode="contain"
+          />
+          <Text style={styles.title}>Welcome Back!</Text>
+        </View>
+
+        {/* Email input */}
+        <Controller
+          control={control}
+          name="email"
+          rules={{
+            required: "Email is required",
+            pattern: {
+              value: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+              message: "Enter a valid email",
+            },
+          }}
+          render={({ field: { onChange, onBlur, value } }) => (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={value}
+                onChangeText={(text) => {
+                  onChange(text);
+                  if (errors.email) clearErrors("email");
+                  // if (error) dispatch(clearError());
+                }}
+                onBlur={onBlur}
+              />
+              <Text style={styles.error}>{errors?.email?.message}</Text>
+            </>
+          )}
+        />
+
+        {/* Password input */}
+        <Controller
+          control={control}
+          name="password"
+          rules={{
+            required: "Password is required",
+            minLength: {
+              value: 6,
+              message: "Password must be at least 6 characters",
+            },
+          }}
+          render={({ field: { onChange, onBlur, value } }) => (
+            <View style={{ position: "relative", height: 50 }}>
+              <TextInput
+                style={[styles.input, { paddingRight: 40 }]} // leave space for icon
+                placeholder="Password"
+                secureTextEntry={!showPassword}
+                value={value}
+                onChangeText={(text) => {
+                  onChange(text);
+                  if (errors.password) clearErrors("password");
+                }}
+                onBlur={onBlur}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: 0,
+                  bottom: 0,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: 40,
+                }}
+              >
+                {showPassword ? (
+                  <Feather name="eye-off" size={20} color="gray" />
+                ) : (
+                  <Feather name="eye" size={20} color="gray" />
+                )}
+              </TouchableOpacity>
+
+              {errors?.password?.message && (
+                <Text style={styles.error}>{errors.password.message}</Text>
+              )}
+              {error && <Text style={styles.error}>{error}</Text>}
+            </View>
+          )}
+        />
+
+        {/* Submit button */}
+        <Button
+          title="Login"
+          onPress={handleSubmit(onSubmit)}
+          loading={isLoading}
+          disabled={isLoading}
+          variant="primary"
+          style={{ marginTop: 25 }}
+          size="medium"
+        />
+
+        {/* Registration link */}
+        <TouchableOpacity
+          onPress={() => {
+            reset();
+            router.navigate("/registration");
+          }}
+          style={styles.registerLink}
+        >
+          <Text style={styles.registerText}>
+            Don't have an account?{" "}
+            <Text style={{ fontWeight: "bold" }}>Register</Text>
+          </Text>
+        </TouchableOpacity>
+      </KeyboardAwareScrollView>
     </View>
   );
 };
